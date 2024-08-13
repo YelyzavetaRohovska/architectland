@@ -1,0 +1,21 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: architectland
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: architectland
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: architectland
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+
+functions:
+  buildingLimits_calculate:
+    handler: src/routes/buildingLimits/handler.post
+    events:
+      - http:
+          path: buildingLimits/calculate
+          method: post
+          request:
+            schemas:
+              application/json: ${file(schemas/buildingLimits/post.json)}
