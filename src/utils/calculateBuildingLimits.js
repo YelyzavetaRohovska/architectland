@@ -7,7 +7,52 @@ import {
   booleanWithin
 } from "@turf/turf";
 
-export const validatePolygon = (polygon, { itemType = "Polygon" } = {}) => {
+export const validateBuildingLimitsWithinPlateaus = (buildingLimitCollection, heightPlateausCollection) => {
+  // Early return if the Building Limits polygon has errors
+  validatePolygon(buildingLimitCollection.features[0], {
+    itemType: "Building Limit",
+  });
+
+  // Early return if Height Plateaus has errors
+  heightPlateausCollection.features.forEach((polygon) => {
+    validatePolygon(polygon, { itemType: "Height Plateau" });
+  });
+
+  // Validate if the Building Limits is within the Height Plateaus
+  isBuildingLimitWithingPlateaus(buildingLimitCollection.features[0], heightPlateausCollection.features);
+
+  return true;
+};
+
+export const splitBuildingLimitsByElevation = (
+  buildingLimit,
+  plateausWithElevation
+) => {
+  const splitedBuildingLimits = [];
+
+  for (let i = 0; i < plateausWithElevation.length; i++) {
+    let {
+      properties: { elevation },
+    } = plateausWithElevation[i];
+
+    let intersection = intersect(
+      featureCollection([buildingLimit, plateausWithElevation[i]]),
+      {
+        properties: { elevation },
+      }
+    );
+
+    if (!intersection) {
+      continue;
+    }
+
+    splitedBuildingLimits.push(intersection);
+  }
+
+  return splitedBuildingLimits;
+};
+
+const validatePolygon = (polygon, { itemType = "Polygon" } = {}) => {
   // Validate if the polygon has self-intersections
   if (getSelfIntersectionsPoints(polygon).length) {
     throw new Error(`${itemType} has self-intersections`);
@@ -30,40 +75,19 @@ export const validatePolygon = (polygon, { itemType = "Polygon" } = {}) => {
   return true;
 }
 
-export const isBuildingLimitWithingPlateaus = (buildingLimit, plateaus) => {
-  const unio = union(featureCollection(plateaus));
-
-  const within = booleanWithin(buildingLimit, unio);
-  if (!within) {
-    throw new Error("Building Limits is not within the Height Plateaus");
-  }
-}
-
-export const splitBuildingLimitsByElevation = (buildingLimit, plateausWithElevation) => {
-  const splitedBuildingLimits = [];
-
-  for (let i = 0; i < plateausWithElevation.length; i++) {
-    let { properties: { elevation } } = plateausWithElevation[i];
-
-    let intersection = intersect(
-      featureCollection([buildingLimit, plateausWithElevation[i]]), {
-      properties: { elevation }
-    });
-
-    if (!intersection) {
-      continue;
-    }
-
-    splitedBuildingLimits.push(intersection);
-  }
-
-  return splitedBuildingLimits;
-};
-
 const isClockWiseDirection = (coords) => {
   return booleanClockwise(coords);
 };
 
 const getSelfIntersectionsPoints = (polygon) => {
   return kinks(polygon).features.map((f) => f.geometry.coordinates);
+};
+
+const isBuildingLimitWithingPlateaus = (buildingLimit, plateaus) => {
+  const plateausUnionGeo = union(featureCollection(plateaus));
+
+  // Validate if the Building Limits is within the Height Plateaus
+  if (!booleanWithin(buildingLimit, plateausUnionGeo)) {
+    throw new Error("Building Limits is not within the Height Plateaus");
+  }
 };
