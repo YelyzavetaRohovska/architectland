@@ -89,7 +89,7 @@
                   },
                   "coordinates": {
                     "type": "array",
-                    "items": [{
+                    "items": {
                       "type": "array",
                       "minItems": 4,
                       "items": {
@@ -99,8 +99,8 @@
                           "type": "number"
                         }
                       }
-                    }],
-                    "additionalItems": false
+                    },
+                    "minItems": 1
                   }
                 }
               },
