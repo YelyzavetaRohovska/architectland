@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "BuildingLimitsRequestBody",
+  "type": "object",
+  "properties": {
+    "building_limits": {
+      "title": "GeoJSON FeatureCollection Building Limits",
+      "type": "object",
+      "required": ["type", "features"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["FeatureCollection"]
+        },
+        "features": {
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "required": ["type", "geometry"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["Feature"]
+                },
+                "geometry": {
+                  "title": "GeoJSON Polygon",
+                  "type": "object",
+                  "required": ["type", "coordinates"],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["Polygon"]
+                    },
+                    "coordinates": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "array",
+                          "minItems": 4,
+                          "items": {
+                            "type": "array",
+                            "minItems": 2,
+                            "items": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      ],
+                      "additionalItems": false
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "additionalItems": false
+        }
+      }
+    },
+    "height_plateaus": {
+      "title": "GeoJSON FeatureCollection Height Plateaus",
+      "type": "object",
+      "required": ["type", "features"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["FeatureCollection"]
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "title": "GeoJSON Feature",
+            "type": "object",
+            "required": ["type", "geometry", "properties"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["Feature"]
+              },
+              "geometry": {
+                "title": "GeoJSON Polygon",
+                "type": "object",
+                "required": ["type", "coordinates"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["Polygon"]
+                  },
+                  "coordinates": {
+                    "type": "array",
+                    "items": [{
+                      "type": "array",
+                      "minItems": 4,
+                      "items": {
+                        "type": "array",
+                        "minItems": 2,
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    }],
+                    "additionalItems": false
+                  }
+                }
+              },
+              "properties": {
+                "type": "object",
+                "required": ["elevation"],
+                "properties": {
+                  "elevation": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}
