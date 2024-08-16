@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "BuildingLimitsRequestBody",
   "type": "object",
+  "required": ["building_limits", "height_plateaus"],
   "properties": {
     "building_limits": {
       "title": "GeoJSON FeatureCollection Building Limits",
