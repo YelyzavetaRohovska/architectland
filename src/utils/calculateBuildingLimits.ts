@@ -7,7 +7,19 @@ import {
   booleanWithin
 } from "@turf/turf";
 
-export const validateBuildingLimitsWithinPlateaus = (buildingLimitCollection, heightPlateausCollection) => {
+import {
+  FeatureCollection,
+  Feature,
+  Polygon,
+  Position
+} from "geojson";
+
+import ApiError from "./apiError";
+
+export const validateBuildingLimitsWithinPlateaus = (
+  buildingLimitCollection: FeatureCollection<Polygon>,
+  heightPlateausCollection: FeatureCollection<Polygon>
+) => {
   // Early return if the Building Limits polygon has errors
   validatePolygon(buildingLimitCollection.features[0], {
     itemType: "Building Limit",
@@ -25,8 +37,8 @@ export const validateBuildingLimitsWithinPlateaus = (buildingLimitCollection, he
 };
 
 export const splitBuildingLimitsByElevation = (
-  buildingLimit,
-  plateausWithElevation
+  buildingLimit: Feature<Polygon>,
+  plateausWithElevation: Feature<Polygon, { elevation: number }>[]
 ) => {
   const splitedBuildingLimits = [];
 
@@ -52,22 +64,22 @@ export const splitBuildingLimitsByElevation = (
   return splitedBuildingLimits;
 };
 
-const validatePolygon = (polygon, { itemType = "Polygon" } = {}) => {
+const validatePolygon = (polygon: Feature<Polygon>, { itemType = "Polygon" } = {}) => {
   // Validate if the polygon has self-intersections
   if (getSelfIntersectionsPoints(polygon).length) {
-    throw new Error(`${itemType} has self-intersections`);
+    throw new ApiError(422, `${itemType} has self-intersections`);
   }
 
   // Validate if the polygon has a clockwise direction in the exterior ring
   if (isClockWiseDirection(polygon.geometry.coordinates[0])) {
-    throw new Error(`${itemType} has a clockwise direction in an exterior rings`);
+    throw new ApiError(422, `${itemType} has a clockwise direction in an exterior rings`);
   }
 
   // Validate if the polygon has a counter-clockwise direction in the internal rings
   if (polygon.geometry.coordinates.length > 1) {
     for (let i = 1; i < polygon.geometry.coordinates.length; i++) {
       if (!isClockWiseDirection(polygon.geometry.coordinates[i])) {
-        throw new Error(`${itemType} has a counter-clockwise direction in an internal ring`);
+        throw new ApiError(422, `${itemType} has a counter-clockwise direction in an internal ring`);
       }
     }
   }
@@ -75,19 +87,23 @@ const validatePolygon = (polygon, { itemType = "Polygon" } = {}) => {
   return true;
 }
 
-const isClockWiseDirection = (coords) => {
+const isClockWiseDirection = (coords: Position[]) => {
   return booleanClockwise(coords);
 };
 
-const getSelfIntersectionsPoints = (polygon) => {
+const getSelfIntersectionsPoints = (polygon: Feature<Polygon>) => {
   return kinks(polygon).features.map((f) => f.geometry.coordinates);
 };
 
-const isBuildingLimitWithingPlateaus = (buildingLimit, plateaus) => {
+const isBuildingLimitWithingPlateaus = (buildingLimit: Feature<Polygon>, plateaus: Feature<Polygon>[]) => {
   const plateausUnionGeo = union(featureCollection(plateaus));
 
-  // Validate if the Building Limits is within the Height Plateaus
+  if (!plateausUnionGeo) {
+    throw new ApiError(422, "Height Plateaus are not contiguous");
+  }
+
   if (!booleanWithin(buildingLimit, plateausUnionGeo)) {
-    throw new Error("Building Limits is not within the Height Plateaus");
+    // Validate if the Building Limits is within the Height Plateaus
+    throw new ApiError(422, 'Building Limits is not within the Height Plateaus');
   }
 };

@@ -1,12 +1,15 @@
-import { createSucessResponse, httpWrapper } from "../../utils/httpHelper.js";
+import { 
+  createErrorResponse,
+  createSucessResponse,
+  httpWrapper } from '../../utils/httpHelper';
 import {
   validateBuildingLimitsWithinPlateaus,
   splitBuildingLimitsByElevation,
-} from "../../utils/calculateBuildingLimits.js";
+} from '../../utils/calculateBuildingLimits';
 
-export const post = (event) =>
+export const post = async (event: any) =>
   httpWrapper(
-    async ({ jsonBody }) => {
+    async ({ jsonBody, pgClient }) => {
       const { building_limits, height_plateaus } = jsonBody;
 
       // Early return if the Building Limits polygon has validation errors
@@ -18,14 +21,17 @@ export const post = (event) =>
         height_plateaus.features
       );
 
-      return createSucessResponse({
-        statusCode: 200,
-        body: {
+      if (!splitedBuildingLimits.length) {
+        return createErrorResponse(400, "No intersection found");
+      }
+
+      return createSucessResponse(200,
+       {
           buildingLimits: building_limits,
           heightPlateaus: height_plateaus,
-          splitedBuildingLimits
+          splitedBuildingLimits,
         },
-      });
+      );
     },
     {
       fnContext: "post_building_limits",
