@@ -18,7 +18,7 @@ export default class DbService {
     options?: { [key: string]: any }
   ): Promise<{
     rows: any[];
-    rowsCount: number;
+    rowCount: number;
     command: string;
   }> {
     throw new ApiError(404, "Method:insertItem not implemented");

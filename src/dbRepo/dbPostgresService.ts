@@ -55,7 +55,7 @@ export default class DbPostgresService extends DbService {
       console.log(`Successfully inserted ${resp.rowCount} Rows`);
       return {
         rows: resp.rows,
-        rowsCount: resp.rowCount ?? 0,
+        rowCount: resp.rowCount ?? 0,
         command: resp.command,
       };
     } catch (err: any) {
