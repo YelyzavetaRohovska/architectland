@@ -51,6 +51,13 @@ functions:
           request:
             schemas:
               application/json: ${file(schemas/buildingLimits/post.json)}
+  buildingLimits_fetch:
+    handler: src/routes/buildingLimits/handler.get
+    events:
+      - http:
+          path: buildingLimits
+          method: get
+          cors: true
 resources:
   Resources:
     LambdaRole:

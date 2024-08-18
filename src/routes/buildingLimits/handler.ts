@@ -1,11 +1,13 @@
-import { 
+import ApiError from "../../utils/apiError";
+import {
   createErrorResponse,
   createSucessResponse,
-  httpWrapper } from '../../utils/httpHelper';
+  httpWrapper,
+} from "../../utils/httpHelper";
 import {
   validateBuildingLimitsWithinPlateaus,
   splitBuildingLimitsByElevation,
-} from '../../utils/calculateBuildingLimits';
+} from "../../utils/calculateBuildingLimits";
 
 export const post = async (event: any) =>
   httpWrapper(
@@ -25,16 +27,40 @@ export const post = async (event: any) =>
         return createErrorResponse(400, "No intersection found");
       }
 
-      return createSucessResponse(200,
-       {
-          buildingLimits: building_limits,
-          heightPlateaus: height_plateaus,
-          splitedBuildingLimits,
-        },
-      );
+      // Insert the Building Limits and Height Plateaus into the database
+      const resp = await pgClient.insertItem("buildingLimits", {
+        buildingLimit: building_limits,
+        heightPlateaus: height_plateaus,
+        splitedBuildingLimits,
+      }, { returning: true });
+
+      if (!resp?.rows?.length) {
+        throw new ApiError(500, "Failed to insert building limits");
+      }
+
+      return createSucessResponse(200, resp.rows[0]);
     },
     {
       fnContext: "post_building_limits",
+      event,
+    }
+  );
+
+export const get = async (event: any) =>
+  httpWrapper(
+    async ({ pgClient, queryStringParameters }) => {
+      const rows = await pgClient.fetchItems("buildingLimits", {
+        limit: queryStringParameters.limit,
+      });
+
+      if (!rows) {
+        throw new ApiError(404, "Failed to fetch building limits");
+      }
+
+      return createSucessResponse(200, rows);
+    },
+    {
+      fnContext: "get_building_limits",
       event,
     }
   );
