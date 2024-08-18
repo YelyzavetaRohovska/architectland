@@ -1,68 +1,88 @@
-<!--
-title: 'AWS NodeJS Example'
-description: 'This template demonstrates how to deploy a simple NodeJS function running on AWS Lambda using the Serverless Framework.'
-layout: Doc
-framework: v4
-platform: AWS
-language: nodeJS
-priority: 1
-authorLink: 'https://github.com/serverless'
-authorName: 'Serverless, Inc.'
-authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4'
--->
+# Welcome to Architectland!
 
-# Serverless Framework AWS NodeJS Example
+The app represents a simple REST API with the following features:
+  - Retrieve building limit data
+  - Insert building limit data, split by plateau elevation
 
-This template demonstrates how to deploy a simple NodeJS function running on AWS Lambda using the Serverless Framework. The deployed function does not include any event definitions or any kind of persistence (database). For more advanced configurations check out the [examples repo](https://github.com/serverless/examples/) which include use cases like API endpoints, workers triggered by SQS, persistence with DynamoDB, and scheduled tasks. For details about configuration of specific events, please refer to our [documentation](https://www.serverless.com/framework/docs/providers/aws/events/).
+## Test the deployed version
 
-## Usage
+### GET
+| Param       | Type        |
+| ----------- | ----------- |
+| limit       | `number`      |
 
-### Deployment
-
-In order to deploy the example, you need to run the following command:
-
+Request:
+```sh
+curl https://puh1ke3jyk.execute-api.eu-north-1.amazonaws.com/dev/buildingLimits?limit=10 \
+  -X GET
 ```
-serverless deploy
-```
-
-After running deploy, you should see output similar to:
-
-```
-Deploying "aws-node" to stage "dev" (us-east-1)
-
-✔ Service deployed to stack aws-node-dev (90s)
-
-functions:
-  hello: aws-node-dev-hello (1.5 kB)
+Expected result:
+```json
+[
+  {
+    buildingLimit: geoJSON,
+    heightPlateaus: geoJSON,
+    splitedBuildingLimits: geoJSON
+  },
+  ...
+]
 ```
 
-### Invocation
+### POST
 
-After successful deployment, you can invoke the deployed function by using the following command:
+See https://datatracker.ietf.org/doc/html/rfc7946#page-12 for more info regarding geoJSON objects.
 
+| Body            | Type        |
+| --------------- | ----------- |
+| building_limits | `FeatureCollection<Polygon>`
+| heigh_plateaus  | `FeatureCollection<Polygon>`
+
+
+Request:
+```sh
+curl https://puh1ke3jyk.execute-api.eu-north-1.amazonaws.com/dev/buildingLimits/calculate \
+  -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"building_limits": <geoJSON>, "height_plateaus": <geoJSON>}'
 ```
-serverless invoke --function hello
-```
-
-Which should result in response similar to the following:
-
+Expected result:
 ```json
 {
-  "statusCode": 200,
-  "body": "{\"message\":\"Go Serverless v4.0! Your function executed successfully!\"}"
+  buildingLimit: geoJSON,
+  heightPlateaus: geoJSON,
+  splitedBuildingLimits: geoJSON
 }
 ```
 
-### Local development
+## Development
 
-The easiest way to develop and test your function is to use the Serverless Framework's `dev` command:
-
+Start locally:
+```sh
+git clone https://github.com/YelyzavetaRohovska/architectland.git
+npm install
+npm run sls:dev
 ```
-serverless dev
+
+Deploy:
+```sh
+npm run sls:deploy
 ```
 
-This will start a local emulator of AWS Lambda and tunnel your requests to and from AWS Lambda, allowing you to interact with your function as if it were running in the cloud.
+Testing:
+```sh
+npm run test
+```
 
-Now you can invoke the function as before, but this time the function will be executed locally. Now you can develop your function locally, invoke it, and see the results immediately without having to re-deploy.
+## Decisions
 
-When you are done developing, don't forget to run `serverless deploy` to deploy the function to the cloud.
+  - Serverless AWS cloud solution
+  - API Gateway
+  - Postgress with PostGIS extension
+  - Request schema validation
+  - Turfjs library to simplify logic
+  - Embed concurency/security by lambda function
+  - Unit tests using vitest
+  - Custom error handling
+  - httpWrapper to handle connection and incoming data
+  - Environment variables to store secrets
+  - TypeScript for comfortable development process
